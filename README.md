@@ -1,3 +1,3 @@
 # DataScience
 
-Project repository for INF-STK4000
+Project repository for STK-INF4000
