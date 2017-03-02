@@ -1,5 +1,13 @@
 # Folder containing dataset.
 
+
+## Shapefile
+Zip-file contains several files (most are required for it to function). 
+
+Unzip (resulting in folder, e.g. 'ne_110m_admin_0_countries'). 
+
+Update link in the code to point to the .shp file.
+
 Shapefile source:
 http://www.naturalearthdata.com/features/
 
