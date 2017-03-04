@@ -131,7 +131,7 @@ class ACLED:
         return data
 
 
-    def __str_to_datetime__(self, pandas_df):
+    def _str_to_datetime(self, pandas_df):
         """
         Function to convert string formatted dates to datetime objects.
         """
@@ -162,7 +162,7 @@ class ACLED:
         return self.acled_api_page_flipper(query)
 
 
-    def __get_indexes_of_duplicates__(self, pandas_df):
+    def _get_indexes_of_duplicates(self, pandas_df):
         """
         Find duplicate data_id entries in pandas DataFrame.
         """
@@ -176,7 +176,7 @@ class ACLED:
         return dup_indexes
 
 
-    def __remove_duplicates__(self, pandas_df):
+    def _remove_duplicates(self, pandas_df):
         """
         Naively remove duplicates inplace, except for the first occurrence.
 
@@ -187,10 +187,10 @@ class ACLED:
 
         # After dropping duplicate whole rows, check if we still have duplicate
         # 'data_id' entries, indicating a collision for distinct events
-        self.__get_indexes_of_duplicates__(pandas_df)
+        self._get_indexes_of_duplicates(pandas_df)
 
 
-    def __csv_assert_header_consistency__(self, csvblob):
+    def _csv_assert_header_consistency(self, csvblob):
         """
         Ensure consistency in column names for data to import and mongodb.
         """
@@ -212,17 +212,17 @@ class ACLED:
             nothing
         """
         print(datetime.datetime.now(), "Make DataFrame...")
-        self.__csv_assert_header_consistency__(csvblob)
+        self._csv_assert_header_consistency(csvblob)
 
         f = io.StringIO(csvblob)
         df = pandas.read_csv(f, dtype=self.ACLED_COLUMN_DTYPES, sep=sep,
                              engine='c', keep_default_na=False)
         f.close()
 
-        self.__str_to_datetime__(df)
+        self._str_to_datetime(df)
 
-        self.__remove_duplicates__(df)
-        # dup_indexes = self.__get_indexes_of_duplicates__(df)
+        self._remove_duplicates(df)
+        # dup_indexes = self._get_indexes_of_duplicates(df)
 
         # if collection is empty, after this
         # Index fields: ['_id_', 'data_id_1']  <-- why '_1' !?
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     #starttime = datetime.datetime(2017, 1, 7)
     #endtime = datetime.datetime(2017, 1, 10)
     #query = {'event_date': {'$gt':starttime,'$lt':endtime}}
-    #df = ds_acled.get_query(query)
+    #df = ds_acled.mongodb_get_query(query)
     df = ds_acled.mongodb_get_entire_database()
     print(df.columns)
     print(datetime.datetime.now(), "Done.")
