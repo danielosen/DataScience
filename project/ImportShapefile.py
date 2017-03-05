@@ -1,36 +1,60 @@
 import geopandas as gpd
 import numpy as np
 
-class ImportShapefile(object):
-    """ Finalize docstring (TODO)
-    Importing 'ESRI shapefile' polygons and prepare for plotting.
+""" TODO
+Consider adding parameter with list of dicts [{'continent': 'Africa'}]
+resulting in:
 
-    Contains functions that extracts exterior of polygons, saved in columns
-    'x' and 'y'. These functions are closely based on the following git-repo:
+mask = data_world['continent']=='Africa'
+self.df = data_world.loc[mask,:]
+"""
+
+class ImportShapefile(object):
+    """Importing 'ESRI shapefile' as geopandas df and adding 'x','y'
+
+    __init__ opens shapefile and calls necessary class-functions to create a
+    geopandas df that includes columns 'x' and 'y' consisting of lists created
+    from the shapefiles geometry objects' (Polygons/MultiPolygons) exterior
+    function.
+
+    Suggested usage:
+    link = [dir to .shp-file]
+    df_full = ImportShapefile(link).get_df()
+
+    Credit:
+    Functions in this class are taken from/based on the git-repo in ref [1].
 
     References
         [1] https://automating-gis-processes.github.io/2016/
     """
 
-    def _get_xy_coords(self, geometry, coord_type):
-        """ Finalize docstring (TODO)
-        Returns either x or y coordinates from  geometry
-        coordinate sequence (Polygon).
+    def _get_xy_coords(self, exterior, coord_type):
+        """ Returns either x or y coordinates from passed geometry.exterior
+
+        Keyword arguments:
+        exterior -- Exterior object (geometry.exterior) of a Polygon
+        coord_type -- 'x' or 'y'
         """
         if coord_type == 'x':
-            return geometry.coords.xy[0]
+            return exterior.coords.xy[0]
         elif coord_type == 'y':
-            return geometry.coords.xy[1]
+            return exterior.coords.xy[1]
 
     def _get_poly_coords(self, geometry, coord_type):
-        """ Finalize docstring (TODO)
-        Returns Coordinates of Polygon using the Exterior of the Polygon."""
+        """ Passes exterior of geometry to self._get_xy_coords."""
         ext = geometry.exterior
         return self._get_xy_coords(ext, coord_type)
 
-    def _multi_poly_handler(self, multi_geometry, coord_type):
-        """ Finalize docstring (TODO)
-        /1/
+    def _multi_poly_handler(self, multi_polygon, coord_type):
+        """ Iterates over the 'Polygons' contained in the passed 'MultiPolygon'
+
+        Function combines the different Polygons separated by an np.nan, as this
+        is the preferred format of Bokeh: https://github.com/bokeh/bokeh/issues/2321
+        Credit to [1] for solution.
+
+        Keyword arguments:
+        multi_polygon -- MultiPolygon object contining several Polygon objects
+        coord_type -- 'x' or 'y'
         """
         for i, part in enumerate(multi_geometry):
             # On the first part of the Multi-geometry initialize the coord_array (np.array)
@@ -39,19 +63,21 @@ class ImportShapefile(object):
             else:
                 coord_arrays = np.concatenate([coord_arrays,
                                               np.append(self._get_poly_coords(part, coord_type), np.nan)])
-
         # Return the coordinates
         return coord_arrays
 
     def _get_coords(self, row, geom_col, coord_type):
-        """ Finalize docstring (TODO)
-        Returns coordinates ('x' or 'y') of a geometry (Point, LineString or Polygon) as
-        a list (if geometry is LineString or Polygon).
-        Can handle also MultiGeometries.
+        """ Returns list containing geometry type asked for
+
+        Only "Polygon" and "MultiPolygon" implemented in class. Other geometry
+        types raises exception.
+
+        Keywords arguments:
+        row -- Geopandas df row passed to function
+        geom_col -- Name of column in shapefile containing shapely-geometry
+        coord_type -- 'x' or 'y'
         """
-        # Get geometry
         geom = row[geom_col]
-        # Check the geometry type
         gtype = geom.geom_type
 
         if gtype == "Polygon":
@@ -63,8 +89,7 @@ class ImportShapefile(object):
             raise TypeError(err_msg)
 
     def _add_coordinate_data(self, df, geom_col):
-        """Add docstring (TODO)
-        """
+        """ Returns (x,y) containing pairwise points of elements geo-exterior"""
         coord_types = ['x', 'y']
 
         x = df.apply(self._get_coords,
@@ -79,27 +104,20 @@ class ImportShapefile(object):
         return x,y
 
     def get_df(self):
+        """Returns self.df (created at initiation)."""
         return self.df
 
     def __init__(self, link, geom_col='geometry'):
-        """Add docstring (TODO)
+        """Loads geopandas dataframe and prepares parameters.
 
-        Param:
-        Link: Directory to shapefile
+        Loads 'ESRI shapefile', initiates self.df and adds 'x' and 'y' columns
+        (from 'geom_col' column of shapefile).
+
+        Keyword arguments:
+        link -- Directory to shapefile (.shp)
+        geom_col -- Name of column in shapefile containing shapely-geometry
         """
-        # Check for file format etc.?
-        # TO BE WRITTEN
-
         self.df = gpd.read_file(link)
         (self.df['x'], self.df['y']) = self._add_coordinate_data(self.df, geom_col)
-
-        """ TODO
-        Consider adding parameter with list of dicts [{'continent': 'Africa'}]
-        resulting in:
-
-        mask = data_world['continent']=='Africa'
-        self.df = data_world.loc[mask,:]
-
-        """
 
         return None
