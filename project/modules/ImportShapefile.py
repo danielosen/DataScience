@@ -27,7 +27,6 @@ class ImportShapefile(object):
     References
         [1] https://automating-gis-processes.github.io/2016/
     """
-
     def _get_xy_coords(self, exterior, coord_type):
         """ Returns either x or y coordinates from passed geometry.exterior
 
@@ -56,7 +55,7 @@ class ImportShapefile(object):
         multi_polygon -- MultiPolygon object contining several Polygon objects
         coord_type -- 'x' or 'y'
         """
-        for i, part in enumerate(multi_geometry):
+        for i, part in enumerate(multi_polygon):
             # On the first part of the Multi-geometry initialize the coord_array (np.array)
             if i == 0:
                 coord_arrays = np.append(self._get_poly_coords(part, coord_type), np.nan)
