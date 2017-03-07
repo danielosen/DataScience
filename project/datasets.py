@@ -230,7 +230,7 @@ class ACLED:
         #   self.c.create_index('data_id',unique=True)
         result = self.c.insert_many(df.to_dict('records'))
         print(len(result.inserted_ids), "records inserted to mongodb,",
-              len(csvblob.splitlines()), "lines in csv. (Why a diffrence?)")
+              len(csvblob.splitlines()), "lines in csv. (Why a difference?)")
         #print("Index fields:",sorted(list(self.c.index_information())))
 
         return result.acknowledged
