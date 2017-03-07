@@ -1,5 +1,5 @@
 """
-$ python3 datasets_example.py 
+$ python3 datasets_example.py
 Database 'acled' does not exist or is empty.
 Grab it from ACLED server (Y/N)? y
 Warning! Query ACLED server for all data newer than date 1995-01-01 could cause heavy load on the server.
@@ -23,6 +23,10 @@ Newest event_date in mongodb is 2017-02-25 00:00:00
 import pandas
 import datetime
 import numpy
+
+# Adding relative directory (to be updated again once 'datasets' module is moved)
+import sys
+sys.path.insert(0, '../')
 import datasets
 
 
@@ -36,4 +40,3 @@ starttime = datetime.datetime(2017, 2, 1)
 endtime = datetime.datetime(2017, 2, 17)
 ndf = df[df['event_date'] >= starttime][df['event_date'] <= endtime]
 print(ndf[['event_date','location','fatalities','event_type']].sort_values(['fatalities'],ascending=False)[:5])
-
