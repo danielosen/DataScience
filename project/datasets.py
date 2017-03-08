@@ -337,6 +337,84 @@ class ACLED:
         """
         self.c.drop()
 
+    def mongodb_get_matching_aggdata_local(self,column_name,column_key,agg_name,lat_range = None,long_range = None):
+        """
+        Arguments:   
+                column_name (string)        = name of column of interest
+                column_key (string)         = key value to match in acled column 'column_name'
+                agg_name (string)           = name of column to aggregate identical values over
+                lat_range (list)            = list of two floats a<=b containing latitude search range
+                long_range (list)           = list of two floats a<=b containing longitude search range
+
+        Returns: 
+                aggs (array)                = sorted numpy array of unique values found in column 'agg_name',
+                                              only rows matching column_key are considered.
+                counts (array)              = sorted numpy array of numbers containing the count of each
+                                              rows sharing the same value in column 'agg_name'
+
+        Example:  
+        Get number of Riots/Protests for each year,  approximately in South Africa:
+        column_name= 'event_type', column_key = 'Riots/Protests', agg_name = 'year', lat_range = [-40,-20], long_range = [15,35].
+
+        Update 08.03.2017:
+        -Included Regular Expression Matching to fix string artefacts w.r.t trailing whitespace and upper/lower case.
+
+        To-Do:
+        Allow for specification of border Polygon instead of lat-long box.
+        """
+
+        import numpy as np
+
+        if lat_range and long_range:
+            pipeline = [{"$match": {column_name : {"$regex" : column_key, "$options" : "i"}}}, 
+                        {"$match": {"latitude": {"$gte" : lat_range[0]}}},
+                        {"$match": {"longitude": {"$gte": long_range[0]}}},
+                        {"$match": {"latitude": {"$lte" : lat_range[1]}}},
+                        {"$match": {"longitude": {"$lte" : long_range[1]}}},
+                        {"$group": { "_id" : "${}".format(agg_name), "count" : {"$sum": 1}}},
+                        {"$sort" : { "_id" : 1}}
+                        ]
+        else:
+            pipeline = [{"$match": {column_name : {"$regex" : column_key, "$options" : "i"}}}, 
+                        {"$group": { "_id" : "${}".format(agg_name), "count" : {"$sum": 1}}},
+                        {"$sort" : { "_id" : 1}}
+                        ]
+
+        cursor = self.c.aggregate(pipeline)
+
+        aggs = []
+
+        counts = []
+
+        for document in cursor:
+
+            aggs.append(document['_id'])
+
+            counts.append(document['count'])
+
+        aggs = np.asarray(aggs)
+
+        counts = np.asarray(counts)
+
+        return aggs,counts
+
+
+# WORLDBANK API
+###########
+class WORDBANK:
+
+    def worldbank_api_request():
+        request_url = 'http://api.worldbank.org/v2/datacatalog'
+        r = requests.get(request_url)
+        assert (r.status_code == 200)
+
+    def worldbank_get_indicator_data(country_code,indicator_code,min_year,max_year):
+        r = requests.get('http://api.worldbank.org/countries/{}/indicators/{}?date={}:{}'.format(country_code,indicator_code,min_year,max_year))
+        print(r.text)
+        pass
+
+class UN:
+    pass
 
 if __name__ == "__main__":
     ds_acled = ACLED()
