@@ -115,7 +115,7 @@ class ACLED:
 
         # ACLED API returns 'No data has been found' at end of data
         while True:
-            time.sleep(2)           # treat ACLED server gently
+            time.sleep(0.1)           # treat ACLED server gently
             print('.', end='')
             sys.stdout.flush()
             result = self.acled_api_request(query + '&page=%i' % page)
@@ -265,6 +265,10 @@ class ACLED:
         print(datetime.datetime.now(), "Querying ACLED API (one dot is 500 rows) ", end='')
 
         csvblob = self.get_acled_data_gt_date(datestr)  # gte?
+
+        if csvblob is None:     # no new data received
+                return False
+
         if to_csv_file is not None:
             open(to_csv_file, "w").write(csvblob)
             print(datetime.datetime.now(), "Wrote", to_csv_file)
