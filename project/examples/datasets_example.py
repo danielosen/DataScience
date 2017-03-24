@@ -27,7 +27,7 @@ import numpy
 # Adding relative directory (to be updated again once 'datasets' module is moved)
 import sys
 sys.path.insert(0, '../')
-import datasets
+import modules.datasets as datasets
 
 
 acled = datasets.ACLED()
