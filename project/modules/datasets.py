@@ -81,6 +81,16 @@ class ACLED:
 
         self.acled_download_database()
 
+        # add geo_point fields to database, if necessary
+        #try:
+        #    self.c.find({'geo_point': { '$exists': True }}).next()
+        #except StopIteration:
+        #    print('Appending geo_points to existing database...')
+        #    df = self.mongodb_get_entire_database()
+        #    #self.append_geo_points(df)
+        #    self.c.drop()
+        #    self.pandas_df_to_mongodb(df)
+
 
     def acled_download_database(self):
         """
@@ -144,6 +154,16 @@ class ACLED:
         pandas_df['event_date'] = pandas_df['event_date'].apply(ymd)
 
 
+    def append_geo_points(self, pandas_df):
+        """
+        Function to append a new column of geo_points.
+        """
+        from shapely.geometry import Point
+        pandas_df['geo_point'] = pandas_df.apply(
+            lambda df: Point(df['latitude'], df['longitude']), 
+            axis=1)
+
+
     def get_acled_data_gt_date(self, date):
         """
         Query ACLED server for data _newer_ (greater than) than given date.
@@ -204,6 +224,25 @@ class ACLED:
         sym_diff = acled_columns.symmetric_difference(csv_columns)
         assert not sym_diff, "OH NO! Inconsistent header names found: %s " % (sym_diff)
 
+    
+    def pandas_df_to_mongodb(self, pandas_df):
+        """
+        Imports a pandas.DataFrame into mongodb.
+
+        Returns:
+            True if successful
+        """
+        # if collection is empty, after this
+        # Index fields: ['_id_', 'data_id_1']  <-- why '_1' !?
+        # if not 'data_id' in self.c.index_information():
+        #   self.c.create_index('data_id',unique=True)
+        result = self.c.insert_many(pandas_df.to_dict('records'))
+        print(len(result.inserted_ids), "records inserted to mongodb,",
+              len(csvblob.splitlines()), "lines in csv. (Why a difference?)")
+        #print("Index fields:",sorted(list(self.c.index_information())))
+
+        return result.acknowledged
+
 
     def csv_to_mongodb(self, csvblob, sep=','):
         """
@@ -214,7 +253,7 @@ class ACLED:
             sep (str)    :  Separator to use (default: ',')
 
         Returns:
-            nothing
+            True if successful
         """
         print(datetime.datetime.now(), "Make DataFrame...")
         self._csv_assert_header_consistency(csvblob)
@@ -223,22 +262,13 @@ class ACLED:
         df = pandas.read_csv(f, dtype=self.ACLED_COLUMN_DTYPES, sep=sep,
                              engine='c', keep_default_na=False)
         f.close()
-
-        self._str_to_datetime(df)
-
+ 
         self._remove_duplicates(df)
         # dup_indexes = self._get_indexes_of_duplicates(df)
 
-        # if collection is empty, after this
-        # Index fields: ['_id_', 'data_id_1']  <-- why '_1' !?
-        # if not 'data_id' in self.c.index_information():
-        #   self.c.create_index('data_id',unique=True)
-        result = self.c.insert_many(df.to_dict('records'))
-        print(len(result.inserted_ids), "records inserted to mongodb,",
-              len(csvblob.splitlines()), "lines in csv. (Why a difference?)")
-        #print("Index fields:",sorted(list(self.c.index_information())))
+        self._str_to_datetime(df)
 
-        return result.acknowledged
+        return self.pandas_df_to_mongodb(df)
 
 
     def acled_to_mongodb(self, datestr, to_csv_file=None):
