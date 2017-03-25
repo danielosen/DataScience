@@ -159,9 +159,10 @@ class ACLED:
         Function to append a new column of geo_points.
         """
         from shapely.geometry import Point
-        pandas_df['geo_point'] = pandas_df.apply(
-            lambda df: Point(df['latitude'], df['longitude']), 
+        df = pandas_df.loc[:, ['latitude','longitude']].apply(
+            lambda df: Point(df.latitude, df.longitude), 
             axis=1)
+        pandas_df.loc[:, 'geo_point'] = df
 
 
     def get_acled_data_gt_date(self, date):
