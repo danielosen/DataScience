@@ -231,18 +231,16 @@ class ACLED:
         Imports a pandas.DataFrame into mongodb.
 
         Returns:
-            True if successful
+            PyMongo.InsertManyResult of operation
         """
         # if collection is empty, after this
         # Index fields: ['_id_', 'data_id_1']  <-- why '_1' !?
         # if not 'data_id' in self.c.index_information():
         #   self.c.create_index('data_id',unique=True)
         result = self.c.insert_many(pandas_df.to_dict('records'))
-        print(len(result.inserted_ids), "records inserted to mongodb,",
-              len(csvblob.splitlines()), "lines in csv. (Why a difference?)")
         #print("Index fields:",sorted(list(self.c.index_information())))
 
-        return result.acknowledged
+        return result
 
 
     def csv_to_mongodb(self, csvblob, sep=','):
@@ -266,9 +264,12 @@ class ACLED:
  
         self._remove_duplicates(df)
         # dup_indexes = self._get_indexes_of_duplicates(df)
-
         self._str_to_datetime(df)
 
+        result = self.pandas_df_to_mongodb(df)
+        print(len(result.inserted_ids), "records inserted to mongodb,",
+              len(csvblob.splitlines()), "lines in csv. (Investigate difference)")
+ 
         return self.pandas_df_to_mongodb(df)
 
 
