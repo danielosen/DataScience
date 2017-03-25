@@ -6,12 +6,17 @@ import datetime
 import time
 import io
 import sys
+import os.path
 
 import logging
 import numpy
 import pandas
 import pymongo
 import requests
+
+
+# Local file cache
+DATADIR = 'data/'
 
 
 # Utility function
@@ -419,6 +424,76 @@ class WORDBANK:
 
 class UN:
     pass
+
+
+class Gapminder:
+    """
+    Class to offer datasets from www.gapminder.org.
+    """
+
+    GMDIR = 'gapminder/'
+    FILEEXT = '.xlsx'
+
+    # Library
+    datasets = { 
+            # Health variables
+            'Medical Doctors (per 1,000 people)':
+                'http://spreadsheets.google.com/pub?key=phAwcNAVuyj2yo1IzJQmbZg&output=xls',
+            'Births attended by skilled health staff (% of total)': 
+                'http://spreadsheets.google.com/pub?key=0AkBd6lyS3EmpdF9OQ2dSSG5nNFhpS3RnRVZHUzZMb3c&output=xls',
+            'Body Mass Index (BMI), men, Kg/m2':
+                'http://spreadsheets.google.com/pub?key=0ArfEDsV3bBwCdF9saE1pWUNYVkVsNU1FdW1Yem81Nmc&output=xls',
+            'Body Mass Index (BMI), women, Kg/m2':
+                'http://spreadsheets.google.com/pub?key=0ArfEDsV3bBwCdGt0elo2dzJMVVQ3WmFGSmdhc09LRlE&output=xls',
+            'Crude death rate (deaths per 1,000 population)':
+                'http://spreadsheets.google.com/pub?key=tHyj-2jRvK3CCNJOc5Vm-HQ&output=xls',
+            # Economy
+            'Aid received (% of GNI)':
+                'http://spreadsheets.google.com/pub?key=tzK6dx2JltRfVXFI1ADh84w&output=xls',
+            'Urban population growth (annual %)':
+                'http://spreadsheets.google.com/pub?key=pyj6tScZqmEcRJEN8MyV3PQ&output=xls',
+            'Age 15-24 unemployment rate':
+                'http://spreadsheets.google.com/pub?key=rEMA-cbNPaOtpDyxTcwugnw&output=xls',
+            'Cell phones (per 100 people)':
+                'http://spreadsheets.google.com/pub?key=0AkBd6lyS3EmpdG1MSjEyS0h2QjRQZ3FXRVR2dVQyeFE&output=xls'
+
+           }
+
+
+    def download_xlsx(self, request_url):
+        r = requests.get(request_url)
+        assert (r.status_code == 200)
+        return r.content
+
+    def _valid_filename(self, name):
+        return name.replace('/','_')
+
+    def get_dataset_names(self):
+        return self.datasets.keys()
+
+    def get_dataset(self, name, url=None):
+        """
+        Returns the dataset in the library as a pandas.Dataframe.
+        If the dataset does not exist, it is downloaded.
+        """
+        filename = DATADIR + self.GMDIR + self._valid_filename(name) + self.FILEEXT
+
+        if name not in self.datasets.keys() and not os.path.exists(filename) and url is None:
+            print(name,'does not exist, please specify the URL to download it.')
+            return None
+
+        if not os.path.exists(filename):
+            if (url is None):
+                url = self.datasets[name]
+            bindata = self.download_xlsx(url)
+            fp = open(filename, 'wb')
+            fp.write(bindata)
+            fp.close()
+            print('Downloaded: "'+filename+'"')
+            print('URL: '+url)
+        df = pandas.read_excel(filename)
+        return df
+
 
 if __name__ == "__main__":
     ds_acled = ACLED()
