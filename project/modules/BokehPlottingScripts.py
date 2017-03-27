@@ -10,7 +10,7 @@ from bokeh.io import output_notebook, show
 output_notebook()
 
 
-def bokeh_plot_test(df, data='area', title="Map with no title"):
+def bokeh_plot_map(df, data='area', title="Map with no title"):
     """ Finalize docstring (TODO)
     Simple function for plotting map contours
 
@@ -32,7 +32,7 @@ def bokeh_plot_test(df, data='area', title="Map with no title"):
 
     contour = p.patches('x', 'y', source=bokeh_cds,
                         fill_color={'field': data, 'transform': color_mapper},
-                        fill_alpha=1.0, line_color="black", line_width=0.05)
+                        fill_alpha=0.8, line_color="black", line_width=0.3)
 
 
     hover = HoverTool(renderers=[contour])
